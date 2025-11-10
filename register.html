@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register | Study Companion</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    body { background: #031427; color: #fff; overflow: hidden; height: 100vh; }
+    #particles-js { position: absolute; width: 100%; height: 100%; z-index: 0; background: radial-gradient(1000px 500px at 8% 8%, rgba(47,123,255,0.06), transparent 8%), linear-gradient(180deg,#031427,#061a38); }
+
+    .register-box {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid #2fb4ff;
+      border-radius: 20px;
+      padding: 40px;
+      width: 350px;
+      max-width: 90%;
+      box-shadow: 0 0 25px #2fb4ff;
+      z-index: 1;
+    }
+
+    .register-box h2 { text-align: center; margin-bottom: 20px; color: #2fb4ff; }
+    .input-box { position: relative; margin-bottom: 25px; }
+    .input-box input {
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #2fb4ff;
+      color: #fff;
+      outline: none;
+      font-size: 16px;
+    }
+    .input-box label {
+      position: absolute;
+      top: 10px;
+      left: 0;
+      color: #aaa;
+      transition: 0.3s;
+      pointer-events: none;
+    }
+    .input-box input:focus + label,
+    .input-box input:valid + label {
+      top: -15px;
+      color: #2fb4ff;
+      font-size: 12px;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(90deg, #2fb4ff, #1b88ff);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: 0.3s;
+    }
+    .btn:hover { opacity: 0.9; }
+    .login-link { text-align: center; font-size: 14px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div id="particles-js"></div>
+
+  <div class="register-box">
+    <h2>Create Account</h2>
+    <form id="registerForm">
+      <div class="input-box">
+        <input type="email" id="regEmail" required />
+        <label for="regEmail">Email</label>
+      </div>
+
+      <div class="input-box">
+        <input type="password" id="regPassword" required />
+        <label for="regPassword">Password</label>
+      </div>
+
+      <button type="submit" class="btn">Register</button>
+      <p class="login-link">Already have an account? <a href="login.html">Login</a></p>
+    </form>
+  </div>
+
+  <script>
+    // Particles.js config
+    particlesJS("particles-js", {
+      particles: {
+        number: { value: 50 },
+        size: { value: 3 },
+        move: { speed: 1.8 },
+        line_linked: { enable: true, color: "#00bfff" },
+        color: { value: "#00bfff" }
+      }
+    });
+
+    document.getElementById("registerForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const email = document.getElementById("regEmail").value.trim();
+      const password = document.getElementById("regPassword").value.trim();
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+
+      if (!emailPattern.test(email)) {
+        alert("Please enter a valid Gmail address (example@gmail.com)");
+        return;
+      }
+      if (password === "") {
+        alert("Please enter a password!");
+        return;
+      }
+
+      // Save user credentials to localStorage
+      let users = JSON.parse(localStorage.getItem("users")) || {};
+      if (users[email]) {
+        alert("This email is already registered. Please login.");
+        return;
+      }
+      users[email] = password;
+      localStorage.setItem("users", JSON.stringify(users));
+      alert("Registration successful! You can now login.");
+      window.location.href = "login.html";
+    });
+  </script>
+</body>
+</html>
