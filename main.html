@@ -13,7 +13,7 @@
     font-family:'Poppins',system-ui,Arial,sans-serif;
   }
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;color:var(--text);background:transparent;overflow:hidden;padding:28px;position:relative}
+  body{margin:0;min-height:100vh;color:var(--text);background:transparent;overflow:hidden;padding:20px 28px 28px 28px;position:relative}
   #particles-js{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;background:
     radial-gradient(1000px 500px at 8% 8%, rgba(47,123,255,0.06), transparent 8%),
     linear-gradient(180deg,var(--bg-1),var(--bg-2))}
@@ -41,12 +41,11 @@
 </head>
 <body>
   <div id="particles-js"></div>
-
   <div class="container">
     <header class="header">
       <div>
         <h1 style="margin:0">Smart Study Companion</h1>
-        <div style="color:var(--muted);font-size:13px"></div>
+        <div style="color:var(--muted);font-size:13px;margin-top:2px"></div>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
         <div id="userBadge" class="card" style="padding:8px 12px;border-radius:999px">Guest</div>
@@ -57,7 +56,6 @@
     <main class="main-grid">
       <!-- LEFT COLUMN -->
       <section>
-        <!-- Tasks -->
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
@@ -67,20 +65,22 @@
             <div style="color:var(--muted)">User: <strong id="currentUserLabel">Guest</strong></div>
           </div>
 
-          <div style="display:flex;gap:8px;margin-top:12px">
+          <!-- Task input + deadline -->
+          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
             <input id="taskInput" class="input" placeholder="Add a study task...">
+            <input id="taskDeadline" type="datetime-local" class="input" style="max-width:200px">
             <button id="addTaskBtn" type="button" class="btn">Add</button>
           </div>
 
           <ul id="taskList" class="task-list"></ul>
         </div>
 
-        <!-- Pomodoro -->
+        <!-- Pomodoro Timer -->
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <div>
               <h3 style="margin:0">Pomodoro Timer</h3>
-              <div style="color:var(--muted);font-size:13px;margin-top:6px">Work / Short / Long — all blue neon</div>
+              <div style="color:var(--muted);font-size:13px;margin-top:6px">Work / Short Break / Long Break</div>
             </div>
             <div style="color:var(--muted)">Mode: <strong id="modeLabel">work</strong></div>
           </div>
@@ -95,8 +95,8 @@
           <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap">
             <button id="startPauseBtn" class="btn">Start</button>
             <button id="resetBtn" class="btn">Reset</button>
-            <button id="shortBreakBtn" class="btn btn-secondary">Short 5min</button>
-            <button id="longBreakBtn" class="btn btn-secondary">Long 10min</button>
+            <button id="shortBreakBtn" class="btn btn-secondary">Short Break</button>
+            <button id="longBreakBtn" class="btn btn-secondary">Long Break</button>
           </div>
         </div>
       </section>
@@ -124,7 +124,6 @@
         <div class="card" style="display:flex;flex-direction:column;gap:8px">
           <div style="color:var(--muted)">Utilities</div>
           <button id="clearTasksBtn" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text)">Clear Tasks</button>
-          <button id="exportBtn" class="btn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--text)">Export Data</button>
         </div>
       </aside>
     </main>
@@ -135,50 +134,63 @@
 <script>
 /* ===== LOGIN CHECK ===== */
 const userEmail = localStorage.getItem('userEmail');
-if (!userEmail) {
-  window.location.href = 'login.html';
-} else {
+if(!userEmail){ window.location.href='login.html'; }
+else{
   document.getElementById('currentUserLabel').textContent = userEmail;
   document.getElementById('userBadge').textContent = userEmail.split('@')[0];
 }
 
+const storageKey = `ssc_tasks_${userEmail}`;
+
 /* ===== particles background ===== */
-particlesJS('particles-js', {
-  particles: { number:{value:80}, size:{value:3}, move:{speed:2}, line_linked:{enable:true,color:'#00bfff'}, color:{value:'#00bfff'} },
-  interactivity:{ events:{ onhover:{ enable:true, mode:'repulse' } }, modes:{ repulse:{ distance:100 } } }
+particlesJS('particles-js',{
+  particles:{ number:{value:80}, size:{value:3}, move:{speed:2}, line_linked:{enable:true,color:'#00bfff'}, color:{value:'#00bfff'} },
+  interactivity:{ events:{ onhover:{ enable:true, mode:'repulse'}}, modes:{ repulse:{ distance:100 } } }
 });
 
 /* ===== Tasks ===== */
 const taskInput = document.getElementById('taskInput');
+const taskDeadlineInput = document.getElementById('taskDeadline');
 const addTaskBtn = document.getElementById('addTaskBtn');
 const taskList = document.getElementById('taskList');
 const progressFill = document.getElementById('progressFill');
 const progressText = document.getElementById('progressText');
 
-let tasks = JSON.parse(localStorage.getItem('ssc_tasks') || '[]');
+let tasks = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
 function escapeHtml(t){return t.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
-function saveTasks(){ localStorage.setItem('ssc_tasks', JSON.stringify(tasks)); }
+function saveTasks(){ localStorage.setItem(storageKey, JSON.stringify(tasks)); }
 function updateProgress(){
   const done = tasks.filter(t => t.done).length;
   const total = tasks.length;
   const pct = total ? Math.round(done/total*100) : 0;
-  progressFill.style.width = pct + '%';
+  progressFill.style.width = pct+'%';
   progressText.textContent = `${done} / ${total} (${pct}%)`;
 }
+
+/* ===== Render Tasks ===== */
 function renderTasks(){
-  taskList.innerHTML = '';
-  if (tasks.length === 0) {
-    taskList.innerHTML = '<li style="color:var(--muted);padding:8px 0">No tasks — add one above.</li>';
+  taskList.innerHTML='';
+  if(tasks.length===0){
+    taskList.innerHTML='<li style="color:var(--muted);padding:8px 0">No tasks — add one above.</li>';
     updateProgress();
     return;
   }
   tasks.forEach((t,i)=>{
-    const li = document.createElement('li');
-    li.className = 'task-item';
-    li.innerHTML = `<span style="text-decoration:${t.done?'line-through':'none'}">${escapeHtml(t.text)}</span>
+    const li=document.createElement('li');
+    li.className='task-item';
+    let deadlineText='', overdue=false;
+    if(t.deadline){
+      const now=Date.now();
+      if(now>t.deadline && !t.done) overdue=true;
+      const d=new Date(t.deadline);
+      deadlineText=` — Due: ${d.toLocaleString()}${overdue?' ⚠️ Overdue':''}`;
+    }
+    li.innerHTML=`<span style="text-decoration:${t.done?'line-through':'none'}; color:${overdue?'#ff6b6b':'inherit'}">
+      ${escapeHtml(t.text)}${deadlineText}</span>
       <div style="display:flex;gap:6px">
         <button class="btn" style="padding:6px 8px;font-size:13px" onclick="toggleTask(${i})">${t.done?'Undo':'Done'}</button>
+        <button class="btn" style="padding:6px 8px;font-size:13px" onclick="editTask(${i})">Edit</button>
         <button class="btn" style="padding:6px 8px;font-size:13px;background:var(--danger)" onclick="deleteTask(${i})">Del</button>
       </div>`;
     taskList.appendChild(li);
@@ -186,141 +198,132 @@ function renderTasks(){
   updateProgress();
   saveTasks();
 }
-window.toggleTask = i => { tasks[i].done = !tasks[i].done; renderTasks(); };
-window.deleteTask = i => { tasks.splice(i,1); renderTasks(); };
+
+window.toggleTask = i => { tasks[i].done=!tasks[i].done; renderTasks(); };
+window.deleteTask = i => { tasks.splice(i,1); saveTasks(); renderTasks(); };
 
 function addTask(){
   const v = taskInput.value.trim();
-  if (!v) return;
-  tasks.unshift({ text: v, done: false, created: Date.now() });
-  taskInput.value = '';
+  if(!v) return;
+  const deadline = taskDeadlineInput.value ? new Date(taskDeadlineInput.value).getTime() : null;
+  tasks.unshift({text:v, done:false, created:Date.now(), deadline:deadline});
+  taskInput.value=''; taskDeadlineInput.value='';
   renderTasks();
 }
 
 addTaskBtn.addEventListener('click', addTask);
-taskInput.addEventListener('keypress', e => { if (e.key === 'Enter'){ e.preventDefault(); addTask(); } });
+taskInput.addEventListener('keypress', e=>{if(e.key==='Enter'){e.preventDefault();addTask();}});
 
-document.getElementById('clearTasksBtn').onclick = () => {
-  if (!confirm('Clear all tasks?')) return;
-  tasks = []; renderTasks();
+/* ===== Edit Task ===== */
+window.editTask = i => {
+  const li = taskList.children[i]; const t = tasks[i];
+  li.innerHTML=`
+    <input type="text" id="editText${i}" class="input" value="${escapeHtml(t.text)}">
+    <input type="datetime-local" id="editDeadline${i}" class="input" value="${t.deadline?new Date(t.deadline).toISOString().slice(0,16):''}">
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <button class="btn" onclick="saveTask(${i})">Save</button>
+      <button class="btn btn-secondary" onclick="renderTasks()">Cancel</button>
+    </div>`;
 };
-document.getElementById('exportBtn').onclick = () => {
-  const data = { user: userEmail, tasks, timestamp: Date.now() };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'ssc-export.json'; a.click(); URL.revokeObjectURL(url);
+window.saveTask = i => {
+  const newText = document.getElementById(`editText${i}`).value.trim();
+  const newDeadlineVal = document.getElementById(`editDeadline${i}`).value;
+  if(!newText) return alert('Task text cannot be empty');
+  tasks[i].text=newText;
+  tasks[i].deadline=newDeadlineVal ? new Date(newDeadlineVal).getTime() : null;
+  renderTasks();
 };
-renderTasks();
+
+/* ===== Clear Tasks ===== */
+document.getElementById('clearTasksBtn').onclick = ()=>{
+  if(!confirm('Clear all tasks?')) return;
+  tasks=[]; saveTasks(); renderTasks();
+};
 
 /* ===== Chat Bot ===== */
 const chatBox = document.getElementById('chatBox');
 const chatInput = document.getElementById('chatInput');
 const chatSendBtn = document.getElementById('chatSendBtn');
-
-function addMessage(text, sender) {
+function addMessage(text,sender){
   const d = document.createElement('div');
-  d.className = 'chat-bubble ' + (sender === 'user' ? 'chat-user' : 'chat-bot');
-  d.textContent = text;
+  d.className='chat-bubble '+(sender==='user'?'chat-user':'chat-bot');
+  d.textContent=text;
   chatBox.appendChild(d);
-  chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+  chatBox.scrollTo({top:chatBox.scrollHeight, behavior:'smooth'});
 }
-chatSendBtn.onclick = () => {
-  const msg = chatInput.value.trim();
-  if (!msg) return;
-  addMessage(msg, 'user');
-  chatInput.value = '';
-  setTimeout(() => {
-    const replies = [
-      "Keep it up! 💪",
-      "Try breaking your session into smaller tasks.",
-      "Remember to take short breaks!",
-      "Focus on one topic at a time.",
-      "Good job staying consistent!"
-    ];
-    addMessage(replies[Math.floor(Math.random()*replies.length)], 'bot');
-  }, 700);
+chatSendBtn.onclick = ()=>{
+  const msg = chatInput.value.trim(); if(!msg) return;
+  addMessage(msg,'user'); chatInput.value='';
+  setTimeout(()=>{
+    const replies=["Keep it up! 💪","Try breaking your session into smaller tasks.","Remember to take short breaks!","Focus on one topic at a time.","Good job staying consistent!"];
+    addMessage(replies[Math.floor(Math.random()*replies.length)],'bot');
+  },700);
 };
 
-/* ===== Timer ===== */
-let timer = null;
-let timeLeft = 25 * 60;
-let running = false;
-let currentMode = 'work';
-
-const display = document.getElementById('timerDisplay');
-const startPauseBtn = document.getElementById('startPauseBtn');
-const resetBtn = document.getElementById('resetBtn');
-const shortBreakBtn = document.getElementById('shortBreakBtn');
-const longBreakBtn = document.getElementById('longBreakBtn');
-const increaseBtn = document.getElementById('increaseBtn');
-const decreaseBtn = document.getElementById('decreaseBtn');
-const modeLabel = document.getElementById('modeLabel');
+/* ===== Timer & Alarm ===== */
+let timer=null, timeLeft=25*60, running=false, currentMode='work';
+const display=document.getElementById('timerDisplay');
+const startPauseBtn=document.getElementById('startPauseBtn');
+const resetBtn=document.getElementById('resetBtn');
+const shortBreakBtn=document.getElementById('shortBreakBtn');
+const longBreakBtn=document.getElementById('longBreakBtn');
+const increaseBtn=document.getElementById('increaseBtn');
+const decreaseBtn=document.getElementById('decreaseBtn');
+const modeLabel=document.getElementById('modeLabel');
 
 function updateTimerDisplay(){
-  const m = Math.floor(timeLeft/60).toString().padStart(2,'0');
-  const s = (timeLeft%60).toString().padStart(2,'0');
-  display.textContent = `${m}:${s}`;
-  display.style.color = (timeLeft <= 60) ? 'red' : 'white';
+  const m=Math.floor(timeLeft/60).toString().padStart(2,'0');
+  const s=(timeLeft%60).toString().padStart(2,'0');
+  display.textContent=`${m}:${s}`;
+  display.style.color=(timeLeft<=60)?'red':'white';
 }
 
-function setMode(mode){ currentMode = mode; modeLabel.textContent = mode; }
+function setMode(mode){ currentMode=mode; modeLabel.textContent=mode; }
 
 function playAlarmAudio(){
-  if (window.alarmAudio) { 
-    alarmAudio.currentTime = 0; 
-    alarmAudio.play().catch(()=>{}); 
+  if(window.alarmAudio){ 
+    alarmAudio.currentTime=0; alarmAudio.play().catch(()=>{}); 
   }
 }
 
 function handleTimeUp(){
-  clearInterval(timer); timer = null; running = false; startPauseBtn.textContent = 'Start';
-  playAlarmAudio();
-  alert('⏰ Time is up!');
+  clearInterval(timer); timer=null; running=false; startPauseBtn.textContent='Start';
+  playAlarmAudio(); alert('⏰ Time is up!');
 }
 
 function startPause(){
-  if (running) {
-    clearInterval(timer); timer = null; running = false; startPauseBtn.textContent = 'Start';
-  } else {
-    running = true; startPauseBtn.textContent = 'Pause';
-    timer = setInterval(()=>{
-      if (timeLeft > 0) { timeLeft--; updateTimerDisplay(); }
+  if(running){ clearInterval(timer); timer=null; running=false; startPauseBtn.textContent='Start'; }
+  else{
+    running=true; startPauseBtn.textContent='Pause';
+    timer=setInterval(()=>{
+      if(timeLeft>0){ timeLeft--; updateTimerDisplay(); } 
       else handleTimeUp();
     },1000);
   }
 }
 
-function resetTimer(){ clearInterval(timer); timer = null; running = false; timeLeft = 25*60; setMode('work'); updateTimerDisplay(); startPauseBtn.textContent = 'Start'; }
-function shortBreak(){ clearInterval(timer); timer = null; running = false; timeLeft = 5*60; setMode('short'); updateTimerDisplay(); startPauseBtn.textContent = 'Start'; }
-function longBreak(){ clearInterval(timer); timer = null; running = false; timeLeft = 10*60; setMode('long'); updateTimerDisplay(); startPauseBtn.textContent = 'Start'; }
-function increaseTime(){ timeLeft += 60; updateTimerDisplay(); }
-function decreaseTime(){ if (timeLeft > 60) { timeLeft -= 60; updateTimerDisplay(); } }
+function resetTimer(){ clearInterval(timer); timer=null; running=false; timeLeft=25*60; setMode('work'); updateTimerDisplay(); startPauseBtn.textContent='Start'; }
+function shortBreak(){ clearInterval(timer); timer=null; running=false; timeLeft=5*60; setMode('short'); updateTimerDisplay(); startPauseBtn.textContent='Start'; }
+function longBreak(){ clearInterval(timer); timer=null; running=false; timeLeft=10*60; setMode('long'); updateTimerDisplay(); startPauseBtn.textContent='Start'; }
+function increaseTime(){ timeLeft+=60; updateTimerDisplay(); }
+function decreaseTime(){ if(timeLeft>60){ timeLeft-=60; updateTimerDisplay(); } }
 
-startPauseBtn.onclick = startPause;
-resetBtn.onclick = resetTimer;
-shortBreakBtn.onclick = shortBreak;
-longBreakBtn.onclick = longBreak;
-increaseBtn.onclick = increaseTime;
-decreaseBtn.onclick = decreaseTime;
+startPauseBtn.onclick=startPause;
+resetBtn.onclick=resetTimer;
+shortBreakBtn.onclick=shortBreak;
+longBreakBtn.onclick=longBreak;
+increaseBtn.onclick=increaseTime;
+decreaseBtn.onclick=decreaseTime;
+
 updateTimerDisplay();
-
-/* ===== Piano alarm sound setup ===== */
-function setupAlarmAudio(){
-  try {
-    window.alarmAudio = new Audio('https://cdn.pixabay.com/download/audio/2023/04/10/audio_4ed3a03b0b.mp3?filename=piano-notification-3sec-14572.mp3');
-    alarmAudio.volume = 0.8;
-    const unlock = () => { alarmAudio.play().then(()=>{ alarmAudio.pause(); alarmAudio.currentTime = 0; }).catch(()=>{}); document.body.removeEventListener('click', unlock); };
-    document.body.addEventListener('click', unlock, { once:true });
-  } catch(e){}
-}
-window.addEventListener('DOMContentLoaded', setupAlarmAudio);
+const alarmAudio = new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg');
 
 /* ===== Logout ===== */
-document.getElementById('logoutBtn').onclick = () => {
-  localStorage.removeItem('userEmail');
-  window.location.href = 'login.html';
+document.getElementById('logoutBtn').onclick=()=>{
+  localStorage.removeItem('userEmail'); window.location.href='login.html';
 };
+
+renderTasks();
 </script>
 </body>
 </html>
