@@ -147,7 +147,7 @@
       const users = JSON.parse(localStorage.getItem("users")) || {};
       if (users[email] && users[email] === password) {
         localStorage.setItem("userEmail", email); // Save logged in user
-        window.location.href = "main.html"; // Redirect
+        window.location.href = "index.html"; // Redirect
       } else {
         alert("Invalid email or password. Please register if you don't have an account.");
       }
