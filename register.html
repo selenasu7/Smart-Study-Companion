@@ -53,6 +53,17 @@
       font-size: 12px;
     }
 
+    .toggle-pass {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      cursor: pointer;
+      font-size: 18px;
+      user-select: none;
+      color: #2fb4ff;
+    }
+
     .btn {
       width: 100%;
       padding: 10px;
@@ -82,6 +93,7 @@
       <div class="input-box">
         <input type="password" id="regPassword" required />
         <label for="regPassword">Password</label>
+        <span id="toggleRegPass" class="toggle-pass">🔒</span>
       </div>
 
       <button type="submit" class="btn">Register</button>
@@ -101,6 +113,20 @@
       }
     });
 
+    // Toggle password visibility
+    const regPasswordInput = document.getElementById('regPassword');
+    const toggleRegPass = document.getElementById('toggleRegPass');
+    toggleRegPass.addEventListener('click', () => {
+      if (regPasswordInput.type === 'password') {
+        regPasswordInput.type = 'text';
+        toggleRegPass.textContent = '🔓';
+      } else {
+        regPasswordInput.type = 'password';
+        toggleRegPass.textContent = '🔒';
+      }
+    });
+
+    // Register form
     document.getElementById("registerForm").addEventListener("submit", function(e) {
       e.preventDefault();
 
@@ -117,7 +143,6 @@
         return;
       }
 
-      // Save user credentials to localStorage
       let users = JSON.parse(localStorage.getItem("users")) || {};
       if (users[email]) {
         alert("This email is already registered. Please login.");
